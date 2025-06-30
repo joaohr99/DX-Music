@@ -62,8 +62,14 @@ for i in range(num_assinantes):
     plano_escolhido = np.random.choice(lista_planos, p=[0.3, 0.5, 0.2])
     dados['Plano_Assinatura'].append(plano_escolhido)
 
-    # Status da assinatura: 85% ativo, 15% cancelado
-    status = np.random.choice(['Ativo', 'Cancelado'], p=[0.85, 0.15])
+    # === MODIFICAÇÃO SUGERIDA AQUI ===
+    # Aumentar a chance de cancelamento para o plano 'Básico'
+    if plano_escolhido == 'Básico':
+        status = np.random.choice(['Ativo', 'Cancelado'], p=[
+                                  0.75, 0.25])  # 25% de chance de cancelar
+    else:
+        status = np.random.choice(['Ativo', 'Cancelado'], p=[
+                                  0.90, 0.10])  # 10% de chance de cancelar
     dados['Status_Assinatura'].append(status)
 
     # Meses ativo: Se cancelado, um número menor de meses; se ativo, pode ser mais
@@ -156,4 +162,148 @@ sns.histplot(df_assinantes['Receita_Mensal'], bins=5, kde=True)
 plt.title('Distribuição da Receita Mensal por Assinante')
 plt.xlabel('Receita Mensal (R$)')
 plt.ylabel('Número de Assinantes')
+plt.show()
+
+# Contagem de assinantes por Plano de Assinatura
+plt.figure(figsize=(10, 6))
+sns.countplot(data=df_assinantes, x='Plano_Assinatura',
+              order=df_assinantes['Plano_Assinatura'].value_counts().index)
+plt.title('Contagem de Assinantes por Plano de Assinatura')
+plt.xlabel('Plano de Assinatura')
+plt.ylabel('Número de Assinantes')
+plt.show()
+
+# Contagem de assinantes por Status de Assinatura
+plt.figure(figsize=(8, 5))
+sns.countplot(data=df_assinantes, x='Status_Assinatura')
+plt.title('Status da Assinatura')
+plt.xlabel('Status')
+plt.ylabel('Número de Assinantes')
+plt.show()
+
+# Contagem de assinantes por Faixa Etária
+plt.figure(figsize=(12, 6))
+sns.countplot(data=df_assinantes, x='Faixa_Etaria',
+              order=df_assinantes['Faixa_Etaria'].value_counts(sort=False).index)
+plt.title('Contagem de Assinantes por Faixa Etária')
+plt.xlabel('Faixa Etária')
+plt.ylabel('Número de Assinantes')
+plt.show()
+
+# Vendas (Custo_Total_Assinatura) por Localização - Top 10
+vendas_por_localizacao = df_assinantes.groupby(
+    'Localizacao')['Custo_Total_Assinatura'].sum().nlargest(10)
+plt.figure(figsize=(12, 7))
+sns.barplot(x=vendas_por_localizacao.index, y=vendas_por_localizacao.values)
+plt.title('Custo Total de Assinatura (Receita) por Localização (Top 10)')
+plt.xlabel('Localização (Estado)')
+plt.ylabel('Custo Total de Assinatura (R$)')
+# Rotaciona os rótulos do eixo X para melhor legibilidade
+plt.xticks(rotation=45, ha='right')
+plt.tight_layout()  # Ajusta o layout para evitar sobreposição de rótulos
+plt.show()
+
+# Criar uma coluna 'Ano_Mes_Registro' para agrupar
+# O método to_period('M') converte para um período mensal, ideal para agrupamento temporal
+df_assinantes['Ano_Mes_Registro'] = df_assinantes['Data_Registro'].dt.to_period(
+    'M')
+
+# 1. Contagem de novos registros por Ano e Mês
+registros_mensais = df_assinantes.groupby(
+    'Ano_Mes_Registro').size().reset_index(name='Num_Registros')
+registros_mensais['Ano_Mes_Registro'] = registros_mensais['Ano_Mes_Registro'].astype(
+    str)  # Converter para string para plotar
+
+plt.figure(figsize=(15, 7))
+sns.lineplot(data=registros_mensais, x='Ano_Mes_Registro',
+             y='Num_Registros', marker='o')
+plt.title('Número de Novos Registros de Assinantes por Mês')
+plt.xlabel('Ano-Mês de Registro')
+plt.ylabel('Número de Novos Assinantes')
+plt.xticks(rotation=60, ha='right')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# 2. Receita total gerada pelos novos assinantes por Ano e Mês (no momento do registro)
+receita_mensal_registro = df_assinantes.groupby('Ano_Mes_Registro')[
+    'Receita_Mensal'].sum().reset_index(name='Receita_Total_Registro')
+receita_mensal_registro['Ano_Mes_Registro'] = receita_mensal_registro['Ano_Mes_Registro'].astype(
+    str)
+
+plt.figure(figsize=(15, 7))
+sns.lineplot(data=receita_mensal_registro, x='Ano_Mes_Registro',
+             y='Receita_Total_Registro', marker='o', color='green')
+plt.title('Receita Total Gerada por Novos Assinantes por Mês')
+plt.xlabel('Ano-Mês de Registro')
+plt.ylabel('Receita Total (R$)')
+plt.xticks(rotation=60, ha='right')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# 1. Meses Ativos por Plano de Assinatura
+plt.figure(figsize=(12, 7))
+sns.boxplot(data=df_assinantes, x='Plano_Assinatura',
+            y='Meses_Ativo', order=lista_planos)
+plt.title('Meses Ativos por Plano de Assinatura')
+plt.xlabel('Plano de Assinatura')
+plt.ylabel('Meses Ativos')
+plt.show()
+
+# 2. Custo Total de Assinatura por Plano de Assinatura
+plt.figure(figsize=(12, 7))
+sns.barplot(data=df_assinantes, x='Plano_Assinatura',
+            y='Custo_Total_Assinatura', estimator=sum, order=lista_planos)
+plt.title('Custo Total de Assinatura (Receita) por Plano')
+plt.xlabel('Plano de Assinatura')
+plt.ylabel('Custo Total de Assinatura (R$)')
+plt.show()
+
+# 3. Meses Ativos por Status da Assinatura (para entender o churn)
+plt.figure(figsize=(10, 6))
+sns.boxplot(data=df_assinantes, x='Status_Assinatura', y='Meses_Ativo')
+plt.title('Meses Ativos por Status da Assinatura')
+plt.xlabel('Status da Assinatura')
+plt.ylabel('Meses Ativos')
+plt.show()
+
+# Filtrar dados para assinantes cancelados e ativos para comparação
+df_cancelados = df_assinantes[df_assinantes['Status_Assinatura'] == 'Cancelado']
+df_ativos = df_assinantes[df_assinantes['Status_Assinatura'] == 'Ativo']
+
+# 1. Distribuição de Planos entre Ativos vs. Cancelados
+# Criar dois subplots lado a lado
+fig, axes = plt.subplots(1, 2, figsize=(15, 6), sharey=True)
+
+sns.countplot(data=df_ativos, x='Plano_Assinatura',
+              order=lista_planos, ax=axes[0])
+axes[0].set_title('Plano de Assinatura - Assinantes ATIVOS')
+axes[0].set_xlabel('Plano de Assinatura')
+axes[0].set_ylabel('Número de Assinantes')
+
+sns.countplot(data=df_cancelados, x='Plano_Assinatura',
+              order=lista_planos, ax=axes[1], color='salmon')
+axes[1].set_title('Plano de Assinatura - Assinantes CANCELADOS')
+axes[1].set_xlabel('Plano de Assinatura')
+# axes[1].set_ylabel('Número de Assinantes') # Não precisa de rótulo no segundo, pois sharey=True
+
+plt.tight_layout()
+plt.show()
+
+# 2. Distribuição de Faixa Etária entre Ativos vs. Cancelados
+fig, axes = plt.subplots(1, 2, figsize=(18, 6), sharey=True)
+
+sns.countplot(data=df_ativos, x='Faixa_Etaria',
+              order=df_assinantes['Faixa_Etaria'].value_counts(sort=False).index, ax=axes[0])
+axes[0].set_title('Faixa Etária - Assinantes ATIVOS')
+axes[0].set_xlabel('Faixa Etária')
+axes[0].set_ylabel('Número de Assinantes')
+
+sns.countplot(data=df_cancelados, x='Faixa_Etaria', order=df_assinantes['Faixa_Etaria'].value_counts(
+    sort=False).index, ax=axes[1], color='lightcoral')
+axes[1].set_title('Faixa Etária - Assinantes CANCELADOS')
+axes[1].set_xlabel('Faixa Etária')
+
+plt.tight_layout()
 plt.show()
