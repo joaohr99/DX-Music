@@ -1,8 +1,0 @@
-fake.seed_instance(100)
-
-print(fake.name())
-print(fake.name())
-print(fake.name())
-print(fake.name())
-
-Acima basicamente é uma forma de fixar informações geradas aleatórias no Faker.
