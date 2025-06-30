@@ -1,4 +1,5 @@
 from faker import Faker
+from csv_para_array import *
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
